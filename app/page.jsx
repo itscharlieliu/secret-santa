@@ -1,40 +1,104 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Gift, UserPlus, Shuffle, Copy, Check, Trash2 } from 'lucide-react'
 
-export default function SecretSantaApp() {
+function SecretSantaAppContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [participants, setParticipants] = useState([])
   const [newName, setNewName] = useState('')
   const [assignments, setAssignments] = useState([])
-  const [copiedIndex, setCopiedIndex] = useState(null)
-  const [showAssignment, setShowAssignment] = useState(null)
+  const [selectedParticipant, setSelectedParticipant] = useState('')
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [copiedViewLink, setCopiedViewLink] = useState(false)
 
+  // Load state from URL on mount
   useEffect(() => {
-    // Check if URL has assignment info
-    if (typeof window !== 'undefined' && window.location.hash) {
-      try {
-        const data = JSON.parse(atob(window.location.hash.slice(1)))
-        if (data.giver && data.receiver) {
-          setShowAssignment(data)
-        }
-      } catch (e) {
-        // Invalid hash, ignore
+    if (typeof window === 'undefined') return
+
+    const participantsParam = searchParams.get('participants')
+    const assignmentsParam = searchParams.get('assignments')
+    const selectedParam = searchParams.get('selected')
+
+    if (participantsParam) {
+      const decoded = decodeURIComponent(participantsParam)
+      const parts = decoded.split(',').filter(p => p.trim())
+      if (parts.length > 0) {
+        setParticipants(parts)
       }
     }
-  }, [])
+
+    if (assignmentsParam) {
+      try {
+        const decoded = atob(decodeURIComponent(assignmentsParam))
+        const parsed = JSON.parse(decoded)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setAssignments(parsed)
+        }
+      } catch (e) {
+        console.error('Failed to parse assignments from URL:', e)
+      }
+    }
+
+    if (selectedParam) {
+      setSelectedParticipant(decodeURIComponent(selectedParam))
+    }
+
+    setIsInitialized(true)
+  }, [searchParams])
+
+  // Update URL when state changes
+  const updateURL = (newParticipants, newAssignments, newSelected = null) => {
+    if (typeof window === 'undefined') return
+
+    const params = new URLSearchParams()
+
+    if (newParticipants.length > 0) {
+      params.set('participants', encodeURIComponent(newParticipants.join(',')))
+    }
+
+    if (newAssignments.length > 0) {
+      const encoded = encodeURIComponent(btoa(JSON.stringify(newAssignments)))
+      params.set('assignments', encoded)
+    }
+
+    if (newSelected !== null && newSelected !== '') {
+      params.set('selected', encodeURIComponent(newSelected))
+    } else if (newSelected === null && selectedParticipant) {
+      // Keep current selected if not explicitly changed
+      params.set('selected', encodeURIComponent(selectedParticipant))
+    }
+
+    const newURL = params.toString() 
+      ? `${window.location.pathname}?${params.toString()}`
+      : window.location.pathname
+
+    router.replace(newURL, { scroll: false })
+  }
 
   const addParticipant = () => {
     if (newName.trim() && !participants.includes(newName.trim())) {
-      setParticipants([...participants, newName.trim()])
+      const updated = [...participants, newName.trim()]
+      setParticipants(updated)
       setNewName('')
       setAssignments([])
+      setSelectedParticipant('')
+      updateURL(updated, [], '')
     }
   }
 
   const removeParticipant = (name) => {
-    setParticipants(participants.filter(p => p !== name))
+    const updated = participants.filter(p => p !== name)
+    setParticipants(updated)
     setAssignments([])
+    if (selectedParticipant === name) {
+      setSelectedParticipant('')
+      updateURL(updated, [], '')
+    } else {
+      updateURL(updated, [], selectedParticipant)
+    }
   }
 
   const shuffleArray = (array) => {
@@ -68,19 +132,31 @@ export default function SecretSantaApp() {
       return
     }
 
-    const newAssignments = participants.map((giver, i) => ({
+    // Create assignments
+    const assignmentsData = participants.map((giver, i) => ({
       giver,
       receiver: shuffled[i],
-      link: `${typeof window !== 'undefined' ? window.location.origin : ''}${typeof window !== 'undefined' ? window.location.pathname : ''}#${btoa(JSON.stringify({ giver, receiver: shuffled[i] }))}`,
     }))
 
-    setAssignments(newAssignments)
+    setAssignments(assignmentsData)
+    updateURL(participants, assignmentsData, selectedParticipant)
   }
 
-  const copyLink = (link, index) => {
-    navigator.clipboard.writeText(link)
-    setCopiedIndex(index)
-    setTimeout(() => setCopiedIndex(null), 2000)
+  const getViewLink = () => {
+    if (typeof window === 'undefined' || assignments.length === 0) return ''
+    const params = new URLSearchParams()
+    params.set('participants', encodeURIComponent(participants.join(',')))
+    params.set('assignments', encodeURIComponent(btoa(JSON.stringify(assignments))))
+    return `${window.location.origin}/view?${params.toString()}`
+  }
+
+  const copyViewLink = () => {
+    const link = getViewLink()
+    if (link) {
+      navigator.clipboard.writeText(link)
+      setCopiedViewLink(true)
+      setTimeout(() => setCopiedViewLink(false), 2000)
+    }
   }
 
   const resetAll = () => {
@@ -88,25 +164,45 @@ export default function SecretSantaApp() {
       setParticipants([])
       setAssignments([])
       setNewName('')
+      setSelectedParticipant('')
+      updateURL([], [], '')
     }
   }
 
+  const handleParticipantSelect = (name) => {
+    setSelectedParticipant(name)
+    updateURL(participants, assignments, name)
+  }
+
+  const getSelectedAssignment = () => {
+    if (!selectedParticipant || assignments.length === 0) return null
+    return assignments.find(a => a.giver === selectedParticipant) || null
+  }
+
+  const selectedAssignment = getSelectedAssignment()
+
   // Assignment reveal view
-  if (showAssignment) {
+  if (selectedAssignment && isInitialized) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-green-50 p-4 flex items-center justify-center">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center">
           <Gift className="w-20 h-20 mx-auto mb-6 text-red-500" />
           <h1 className="text-3xl font-bold text-gray-800 mb-4">
-            Ho Ho Ho, {showAssignment.giver}! 🎅
+            Ho Ho Ho, {selectedAssignment.giver}! 🎅
           </h1>
           <p className="text-gray-600 mb-6">You are the Secret Santa for:</p>
           <div className="bg-gradient-to-r from-red-500 to-green-500 text-white text-3xl font-bold py-6 px-4 rounded-xl mb-6">
-            {showAssignment.receiver}
+            {selectedAssignment.receiver}
           </div>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 mb-4">
             Keep it secret! 🤫
           </p>
+          <button
+            onClick={() => handleParticipantSelect('')}
+            className="text-gray-500 hover:text-gray-700 text-sm underline"
+          >
+            Back to organizer
+          </button>
         </div>
       </div>
     )
@@ -191,6 +287,31 @@ export default function SecretSantaApp() {
               Add at least 3 participants to generate assignments
             </div>
           )}
+
+          {assignments.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-700 mb-3">
+                View Your Assignment
+              </h2>
+              <select
+                value={selectedParticipant}
+                onChange={(e) => handleParticipantSelect(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-red-500 focus:outline-none bg-white"
+              >
+                <option value="">Select your name...</option>
+                {participants.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              {selectedParticipant && (
+                <p className="mt-2 text-sm text-gray-500">
+                  Your assignment will appear below when you select your name.
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {assignments.length > 0 && (
@@ -199,47 +320,55 @@ export default function SecretSantaApp() {
               🎉 Assignments Generated!
             </h2>
             <p className="text-gray-600 mb-6">
-              Share each link with the corresponding person. When they open it, they'll see who they're buying for. Keep the links secret!
+              Share this link with all participants. When they open it, they'll see a simple page with a dropdown to select their name and view their assignment.
             </p>
-            <div className="space-y-3">
-              {assignments.map((assignment, index) => (
-                <div
-                  key={index}
-                  className="border-2 border-gray-200 rounded-lg p-4 hover:border-green-300 transition"
+            <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50 mb-4">
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  value={getViewLink()}
+                  readOnly
+                  className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-mono"
+                />
+                <button
+                  onClick={copyViewLink}
+                  className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition whitespace-nowrap"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold text-gray-800">
-                      {assignment.giver}
-                    </div>
-                    <button
-                      onClick={() => copyLink(assignment.link, index)}
-                      className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition"
-                    >
-                      {copiedIndex === index ? (
-                        <>
-                          <Check className="w-4 h-4" />
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4" />
-                          Copy Link
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              ))}
+                  {copiedViewLink ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      Copy Link
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                <strong>Important:</strong> Don't click on the links yourself! Each link reveals who that person should buy for. Save or screenshot this page, then share each link privately with the corresponding participant.
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Tip:</strong> Share this single link with everyone. Each participant can select their name from the dropdown to see their assignment privately.
               </p>
             </div>
           </div>
         )}
       </div>
     </div>
+  )
+}
+
+export default function SecretSantaApp() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-green-50 p-4 flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    }>
+      <SecretSantaAppContent />
+    </Suspense>
   )
 }
 
