@@ -185,13 +185,13 @@ function SecretSantaAppContent() {
   if (selectedAssignment && isInitialized) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-green-50 p-4 flex items-center justify-center">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center">
-          <Gift className="w-20 h-20 mx-auto mb-6 text-red-500" />
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-6 sm:p-8 text-center">
+          <Gift className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-6 text-red-500" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">
             Ho Ho Ho, {selectedAssignment.giver}! 🎅
           </h1>
           <p className="text-gray-600 mb-6">You are the Secret Santa for:</p>
-          <div className="bg-gradient-to-r from-red-500 to-green-500 text-white text-3xl font-bold py-6 px-4 rounded-xl mb-6">
+          <div className="bg-gradient-to-r from-red-500 to-green-500 text-white text-2xl sm:text-3xl font-bold py-6 px-4 rounded-xl mb-6 break-words">
             {selectedAssignment.receiver}
           </div>
           <p className="text-sm text-gray-500 mb-4">
@@ -212,15 +212,15 @@ function SecretSantaAppContent() {
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-green-50 p-4">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <Gift className="w-8 h-8 text-red-500" />
-              <h1 className="text-3xl font-bold text-gray-800">Secret Santa Organizer</h1>
+          <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Gift className="w-6 h-6 sm:w-8 sm:h-8 text-red-500 shrink-0" />
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">Secret Santa Organizer</h1>
             </div>
             {participants.length > 0 && (
               <button
                 onClick={resetAll}
-                className="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition"
+                className="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition shrink-0"
                 title="Reset all"
               >
                 <Trash2 className="w-5 h-5" />
@@ -229,18 +229,18 @@ function SecretSantaAppContent() {
           </div>
 
           <div className="mb-6">
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && addParticipant()}
                 placeholder="Enter participant name"
-                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-red-500 focus:outline-none"
+                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-red-500 focus:outline-none min-w-0"
               />
               <button
                 onClick={addParticipant}
-                className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition"
+                className="bg-red-500 hover:bg-red-600 text-white px-4 sm:px-6 py-3 rounded-lg flex items-center justify-center gap-2 transition shrink-0"
               >
                 <UserPlus className="w-5 h-5" />
                 Add
@@ -275,10 +275,10 @@ function SecretSantaAppContent() {
           {participants.length >= 3 && assignments.length === 0 && (
             <button
               onClick={generateAssignments}
-              className="w-full bg-gradient-to-r from-red-500 to-green-500 hover:from-red-600 hover:to-green-600 text-white py-4 rounded-lg flex items-center justify-center gap-2 text-lg font-semibold transition"
+              className="w-full bg-gradient-to-r from-red-500 to-green-500 hover:from-red-600 hover:to-green-600 text-white py-4 rounded-lg flex items-center justify-center gap-2 text-base sm:text-lg font-semibold transition"
             >
-              <Shuffle className="w-6 h-6" />
-              Generate Secret Santa Assignments
+              <Shuffle className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-center">Generate Secret Santas</span>
             </button>
           )}
 
@@ -316,23 +316,23 @@ function SecretSantaAppContent() {
 
         {assignments.length > 0 && (
           <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">
               🎉 Assignments Generated!
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-sm sm:text-base text-gray-600 mb-6">
               Share this link with all participants. When they open it, they'll see a simple page with a dropdown to select their name and view their assignment.
             </p>
             <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50 mb-4">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <input
                   type="text"
                   value={getViewLink()}
                   readOnly
-                  className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-mono"
+                  className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-mono min-w-0"
                 />
                 <button
                   onClick={copyViewLink}
-                  className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition whitespace-nowrap"
+                  className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition whitespace-nowrap shrink-0"
                 >
                   {copiedViewLink ? (
                     <>
