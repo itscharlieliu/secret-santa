@@ -96,12 +96,6 @@ function ConfirmPageContent() {
           <p className="text-sm text-gray-500 mb-4">
             Keep it secret! 🤫
           </p>
-          <button
-            onClick={handleCancel}
-            className="text-gray-500 hover:text-gray-700 text-sm underline"
-          >
-            Select different name
-          </button>
         </div>
       </div>
     )
@@ -128,7 +122,7 @@ function ConfirmPageContent() {
           Is this you??
         </h1>
         <p className="text-gray-600 mb-6">
-          If you are not this person, Santa Claus will visit you and break your wrists.
+          If you are not this person, Santa Claus will visit you and break your wrists!
         </p>
         <div className="bg-gradient-to-r from-red-100 to-green-100 border-2 border-red-300 text-gray-800 text-2xl font-bold py-6 px-4 rounded-xl mb-8">
           {selectedParticipant}

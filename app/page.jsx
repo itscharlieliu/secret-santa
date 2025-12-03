@@ -11,7 +11,6 @@ function SecretSantaAppContent() {
   const [newName, setNewName] = useState('')
   const [assignments, setAssignments] = useState([])
   const [selectedParticipant, setSelectedParticipant] = useState('')
-  const [isInitialized, setIsInitialized] = useState(false)
   const [copiedViewLink, setCopiedViewLink] = useState(false)
 
   // Load state from URL on mount
@@ -45,8 +44,6 @@ function SecretSantaAppContent() {
     if (selectedParam) {
       setSelectedParticipant(decodeURIComponent(selectedParam))
     }
-
-    setIsInitialized(true)
   }, [searchParams])
 
   // Update URL when state changes
@@ -169,44 +166,6 @@ function SecretSantaAppContent() {
     }
   }
 
-  const handleParticipantSelect = (name) => {
-    setSelectedParticipant(name)
-    updateURL(participants, assignments, name)
-  }
-
-  const getSelectedAssignment = () => {
-    if (!selectedParticipant || assignments.length === 0) return null
-    return assignments.find(a => a.giver === selectedParticipant) || null
-  }
-
-  const selectedAssignment = getSelectedAssignment()
-
-  // Assignment reveal view
-  if (selectedAssignment && isInitialized) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-green-50 p-4 flex items-center justify-center">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-6 sm:p-8 text-center">
-          <Gift className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-6 text-red-500" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">
-            Ho Ho Ho, {selectedAssignment.giver}! 🎅
-          </h1>
-          <p className="text-gray-600 mb-6">You are the Secret Santa for:</p>
-          <div className="bg-gradient-to-r from-red-500 to-green-500 text-white text-2xl sm:text-3xl font-bold py-6 px-4 rounded-xl mb-6 break-words">
-            {selectedAssignment.receiver}
-          </div>
-          <p className="text-sm text-gray-500 mb-4">
-            Keep it secret! 🤫
-          </p>
-          <button
-            onClick={() => handleParticipantSelect('')}
-            className="text-gray-500 hover:text-gray-700 text-sm underline"
-          >
-            Back to organizer
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-green-50 p-4">
@@ -285,31 +244,6 @@ function SecretSantaAppContent() {
           {participants.length > 0 && participants.length < 3 && (
             <div className="text-center text-gray-500 py-4">
               Add at least 3 participants to generate assignments
-            </div>
-          )}
-
-          {assignments.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-700 mb-3">
-                View Your Assignment
-              </h2>
-              <select
-                value={selectedParticipant}
-                onChange={(e) => handleParticipantSelect(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-red-500 focus:outline-none bg-white"
-              >
-                <option value="">Select your name...</option>
-                {participants.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-              {selectedParticipant && (
-                <p className="mt-2 text-sm text-gray-500">
-                  Your assignment will appear below when you select your name.
-                </p>
-              )}
             </div>
           )}
         </div>

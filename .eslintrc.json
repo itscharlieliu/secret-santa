@@ -1,4 +1,8 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": "next/core-web-vitals",
+  "rules": {
+    // Make sure no unused variables error
+    "no-unused-vars": "error"
+  }
 }
 
