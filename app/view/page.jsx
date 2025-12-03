@@ -41,11 +41,19 @@ function ViewPageContent() {
     }
 
     if (selectedParam) {
-      setSelectedParticipant(decodeURIComponent(selectedParam))
+      const decodedSelected = decodeURIComponent(selectedParam)
+      setSelectedParticipant(decodedSelected)
+      // Redirect to confirmation page if selected participant is in URL
+      const params = new URLSearchParams()
+      if (participantsParam) params.set('participants', participantsParam)
+      if (assignmentsParam) params.set('assignments', assignmentsParam)
+      params.set('selected', encodeURIComponent(decodedSelected))
+      router.replace(`/view/confirm?${params.toString()}`)
+      return
     }
 
     setIsInitialized(true)
-  }, [searchParams])
+  }, [searchParams, router])
 
   // Update URL when selection changes
   const handleParticipantSelect = (name) => {
@@ -58,47 +66,18 @@ function ViewPageContent() {
 
     if (participantsParam) params.set('participants', participantsParam)
     if (assignmentsParam) params.set('assignments', assignmentsParam)
-    if (name) params.set('selected', encodeURIComponent(name))
-
-    const newURL = params.toString() 
-      ? `${window.location.pathname}?${params.toString()}`
-      : window.location.pathname
-
-    router.replace(newURL, { scroll: false })
-  }
-
-  const getSelectedAssignment = () => {
-    if (!selectedParticipant || assignments.length === 0) return null
-    return assignments.find(a => a.giver === selectedParticipant) || null
-  }
-
-  const selectedAssignment = getSelectedAssignment()
-
-  // Assignment reveal view
-  if (selectedAssignment && isInitialized) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-green-50 p-4 flex items-center justify-center">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center">
-          <Gift className="w-20 h-20 mx-auto mb-6 text-red-500" />
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">
-            Ho Ho Ho, {selectedAssignment.giver}! 🎅
-          </h1>
-          <p className="text-gray-600 mb-6">You are the Secret Santa for:</p>
-          <div className="bg-gradient-to-r from-red-500 to-green-500 text-white text-3xl font-bold py-6 px-4 rounded-xl mb-6">
-            {selectedAssignment.receiver}
-          </div>
-          <p className="text-sm text-gray-500 mb-4">
-            Keep it secret! 🤫
-          </p>
-          <button
-            onClick={() => handleParticipantSelect('')}
-            className="text-gray-500 hover:text-gray-700 text-sm underline"
-          >
-            Select different name
-          </button>
-        </div>
-      </div>
-    )
+    
+    if (name) {
+      // Navigate to confirmation page when a name is selected
+      params.set('selected', encodeURIComponent(name))
+      router.push(`/view/confirm?${params.toString()}`)
+    } else {
+      // Clear selection and stay on view page
+      const newURL = params.toString() 
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname
+      router.replace(newURL, { scroll: false })
+    }
   }
 
   // Dropdown view
